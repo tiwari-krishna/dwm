@@ -12,4 +12,4 @@ This is my own highly patched build of dwm.
 7. Vanitygaps for many layouts(5 or 6 additional layouts available and uniform gaps)
 8. Reads .Xresources file(Could be configured by Xresources file)
 9. stacker(Stack can be manupulated)
-10. winresize(Floating windows could be resized and moved with arrow keys with different modifiers)
+10. winresize(Floating windows could be resized and moved with arrow keys with different modifiers) and many more..
