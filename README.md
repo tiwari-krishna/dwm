@@ -1,8 +1,8 @@
-### Krishna Tiwari's build of DWM
+# Krishna Tiwari's build of DWM
 Custom build of Dynamic Window Manager(DWM)
 This is my own highly patched build of dwm.
 
-# Patches applied
+## Patches applied
 1. Systray
 2. Statuscmd(Dwmblocks modules made clickable)
 3. Swallow(Windows swallow terminal Windows)
