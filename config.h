@@ -1,15 +1,16 @@
 /* appearance */
 static const double activeopacity   = 1.0f;     /* Window opacity when it's focused (0 <= opacity <= 1) */
-static const double inactiveopacity = 1.0f;   /* Window opacity when it's inactive (0 <= opacity <= 1) */
+static const double inactiveopacity = 0.95f;   /* Window opacity when it's inactive (0 <= opacity <= 1) */
 static       Bool bUseOpacity       = True;     /* Starts with opacity on any unfocused windows */
-static int user_bh            = 0;        /* 0 means that dwm will calculate bar height, >= 1 means dwm will user_bh as bar height */
+static int user_bh            = 20;        /* 0 means that dwm will calculate bar height, >= 1 means dwm will user_bh as bar height */
 static unsigned int borderpx  = 2;        /* border pixel of windows */
+static const unsigned int fborderpx = 4;        /* border pixel of floating windows */
 static unsigned int snap      = 32;       /* snap pixel */
 static const int swallowfloating    = 0;        /* 1 means swallow floating windows by default */
-static unsigned int gappih    = 7;       /* horiz inner gap between windows */
-static unsigned int gappiv    = 7;       /* vert inner gap between windows */
-static unsigned int gappoh    = 10;       /* horiz outer gap between windows and screen edge */
-static unsigned int gappov    = 15;       /* vert outer gap between windows and screen edge */
+static unsigned int gappih    = 5;       /* horiz inner gap between windows */
+static unsigned int gappiv    = 5;       /* vert inner gap between windows */
+static unsigned int gappoh    = 8;       /* horiz outer gap between windows and screen edge */
+static unsigned int gappov    = 12;       /* vert outer gap between windows and screen edge */
 static       int smartgaps          = 0;        /* 1 means no outer gap when there is only one window */
 static const unsigned int systraypinning = 0;   /* 0: sloppy systray follows selected monitor, >0: pin systray to monitor X */
 static const unsigned int systrayonleft = 0;   	/* 0: systray in the right corner, >0: systray on left of status text */
@@ -18,9 +19,11 @@ static const int systraypinningfailfirst = 1;   /* 1: if pinning fails, display 
 static int showsystray        = 1;     /* 0 means no systray */
 static int showbar            = 1;     /* 0 means no bar */
 static int topbar             = 1;     /* 0 means bottom bar */
-static const char *fonts[]          = { "Fira Sans:pixelsize=15:antialias=true:autohint=true", "Noto Color Emoji:pixelsize=14:antialias=true:autohint=true" };
+#define ICONSIZE 16   /* icon size */
+#define ICONSPACING 5 /* space between icon and title */
+static const char *fonts[]          = { "Fira Sans Medium:pixelsize=15:antialias=true:autohint=true", "Noto Sans Devanagari Medium:pixelsize=16:antialias=true:autohint=true", "Noto Color Emoji:pixelsize=14:antialias=true:autohint=true" };
 static char font[]            = "monospace:size=10";
-static char dmenufont[]       = "Fira Sans:pixelsize=14:antialias=true:autohint=true";
+static char dmenufont[]       = "Fira Sans:pixelsize=15:antialias=true:autohint=true";
 static char normbgcolor[]           = "#222222";
 static char normbordercolor[]       = "#444444";
 static char normfgcolor[]           = "#bbbbbb";
@@ -39,7 +42,8 @@ static char *colors[][3]      = {
 
 /* tagging */
 //static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
-static const char *tags[] = { "α", "β", "γ", "δ", "ε", "ζ", "η", "θ", "ι" };
+static const char *tags[] = { "क", "ख", "ग", "घ", "ङ", "च", "छ", "ज", "झ" };
+//static const char *tags[] = { "α", "β", "γ", "δ", "ε", "ζ", "η", "θ", "ι" };
 
 static const XPoint stickyicon[]    = { {0,0}, {4,0}, {4,8}, {2,6}, {0,8}, {0,0} }; /* represents the icon as an array of vertices */
 static const XPoint stickyiconbb    = {4,8};	/* defines the bottom right corner of the polygon's bounding box (speeds up scaling) */
@@ -67,9 +71,9 @@ typedef struct {
     const char *name;
     const void *cmd;
 } Sp;
-const char *spcmd1[] = {"st", "-n", "spterm", "-g", "135x35", NULL };
-const char *spcmd2[] = {"st", "-n", "spmp", "-g", "135x35", "-e", "ncmpcpp", NULL };
-const char *spcmd3[] = {"st", "-n", "spfm", "-g", "135x35", "-e", "ranger", NULL };
+const char *spcmd1[] = {"st", "-n", "spterm", "-g", "145x33", NULL };
+const char *spcmd2[] = {"st", "-n", "spmp", "-g", "145x33", "-e", "ncmpcpp", NULL };
+const char *spcmd3[] = {"st", "-n", "spfm", "-g", "145x33", "-e", "ranger", NULL };
 static Sp scratchpads[] = {
     /* name          cmd  */
     {"spterm",      spcmd1},
@@ -131,7 +135,6 @@ static const Layout layouts[] = {
 //Constants
 #define TERMINAL "$TERMINAL"
 #define BROWSER "$BROWSER"
-#define STATUSBAR "dwmblocks"
 
 /* commands */
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
@@ -280,12 +283,12 @@ static Key keys[] = {
 	TAGKEYS(                        XK_9,                      8)
 	{ MODKEY|ShiftMask,             XK_q,      quit,           {0} },
 	{ MODKEY|ControlMask,           XK_q,      quit,           {1} },
+    { MODKEY|ShiftMask,             XK_u,      focusurgent,    {0} },
+    { MODKEY,                       XK_BackSpace, goback,         {0} },
 
-    { Mod1Mask|ControlMask,         XK_v,               spawn,      SHCMD("pavucontrol") },
+    { Mod1Mask|ControlMask,         XK_v,               spawn,      SHCMD(TERMINAL " -e pulsemixer") },
     { Mod1Mask|ShiftMask,           XK_s,               spawn,      SHCMD("maim -s ~/Data/screenshots/$(date +%Y-%m-%d-%s).png") },
-    { ShiftMask,                    XK_Menu,            spawn,      SHCMD("maim -s ~/Data/screenshots/$(date +%Y-%m-%d-%s).png") },
     { ShiftMask,                    XK_Print,           spawn,      SHCMD("maim -s ~/Data/screenshots/$(date +%Y-%m-%d-%s).png") },
-    { ControlMask,                  XK_Menu,            spawn,      SHCMD("maim ~/Data/screenshots/$(date +%Y-%m-%d-%s).png") },
     { Mod1Mask,                     XK_s,               spawn,      SHCMD("maim ~/Data/screenshots/$(date +%Y-%m-%d-%s).png") },
     { 0, XK_Print,                                      spawn,      SHCMD("maim ~/Data/screenshots/$(date +%Y-%m-%d-%s).png") },
     { 0, XF86XK_AudioMute,                              spawn,      SHCMD("pamixer -t; kill -44 $(pidof dwmblocks)") },
@@ -296,7 +299,7 @@ static Key keys[] = {
     { 0, XF86XK_AudioPrev,                              spawn,      SHCMD("mpc prev; pkill -RTMIN+12 dwmblocks") },
     { 0, XF86XK_AudioNext,                              spawn,      SHCMD("mpc next; pkill -RTMIN+12 dwmblocks") },
     { 0, XF86XK_AudioPlay,                              spawn,      SHCMD("mpc toggle; pkill -RTMIN+12 dwmblocks") },
-    { 0, XF86XK_HomePage,                               spawn,      SHCMD("brave") },
+    { 0, XF86XK_HomePage,                               spawn,      SHCMD(BROWSER) },
     { Mod1Mask,                     XK_Up,              spawn,      SHCMD("pamixer --allow-boost -i 3; pkill -RTMIN+10 dwmblocks") },
     { Mod1Mask,                     XK_Down,            spawn,      SHCMD("pamixer --allow-boost -d 3; pkill -RTMIN+10 dwmblocks") },
     { Mod1Mask|ShiftMask,           XK_space,           spawn,      SHCMD("mpc toggle; pkill -RTMIN+12 dwmblocks") },
@@ -312,7 +315,8 @@ static Key keys[] = {
     { Mod1Mask,		                XK_apostrophe,	    spawn,		SHCMD("mpc seek 0%") },
     { Mod1Mask,		                XK_r,	            spawn,		SHCMD("radio-listen") },
     { Mod1Mask,		                XK_Menu,	        spawn,		SHCMD("radio-listen") },
-    { MODKEY,                       XK_BackSpace,       spawn,      SHCMD("power") },
+    { MODKEY|ShiftMask,             XK_BackSpace,       spawn,      SHCMD("power") },
+    { Mod1Mask,                     XK_BackSpace,       spawn,      SHCMD("vimmouse") },
 
     { MODKEY,                       XK_n,               spawn,      SHCMD(TERMINAL " -e newsboat") },
     { MODKEY|ShiftMask,             XK_w,               spawn,      SHCMD("set-wallpaper") },
@@ -331,6 +335,8 @@ static Key keys[] = {
     { MODKEY|ControlMask,           XK_x,               spawn,      SHCMD("slock") },
     { MODKEY,                       XK_c,               spawn,      SHCMD("galculator") },
     { MODKEY,                       XK_e,               spawn,      SHCMD("emacsclient -c") },
+    { MODKEY,                       XK_d,               spawn,      SHCMD("clipgrab") },
+    { MODKEY|ShiftMask,             XK_d,               spawn,      SHCMD("rofi -show drun") },
     { MODKEY,                       XK_a,               spawn,      SHCMD(TERMINAL " -e ranger") },
     { MODKEY,                       XK_Menu,            spawn,      SHCMD("rofi -show emoji") },
 };
@@ -341,9 +347,6 @@ static Button buttons[] = {
 	/* click                event mask      button          function        argument */
 	{ ClkTagBar,            MODKEY,         Button1,        tag,            {0} },
 	{ ClkTagBar,            MODKEY,         Button3,        toggletag,      {0} },
-    { ClkStatusText,        0,              Button1,        sigstatusbar,   {.i = 1} },
-	{ ClkStatusText,        0,              Button2,        sigstatusbar,   {.i = 2} },
-	{ ClkStatusText,        0,              Button3,        sigstatusbar,   {.i = 3} },
     { ClkWinTitle,          0,              Button2,        zoom,           {0} },
 	{ ClkClientWin,         MODKEY,         Button1,        movemouse,      {0} },
 	{ ClkClientWin,         MODKEY,         Button2,        togglefloating, {0} },
@@ -353,4 +356,3 @@ static Button buttons[] = {
 	{ ClkTagBar,            MODKEY,         Button1,        tag,            {0} },
 	{ ClkTagBar,            MODKEY,         Button3,        toggletag,      {0} },
 };
-
